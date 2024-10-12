@@ -1,11 +1,14 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
+import bcrypt from 'bcrypt'; // Import bcrypt for password hashing
 
-interface IUser extends Document {
+export interface IUser extends Document {
   name: string;
   email: string;
   password: string;
   createdAt: Date;
   updatedAt: Date;
+  setPassword(password: string): Promise<void>; // Method to set a salted password
+  validatePassword(password: string): Promise<boolean>; // Method to validate password
 }
 
 const UserSchema: Schema<IUser> = new Schema(
@@ -25,6 +28,17 @@ const UserSchema: Schema<IUser> = new Schema(
     timestamps: true,
   }
 );
+
+// Method to set a salted password
+UserSchema.methods.setPassword = async function(password: string) {
+  const salt = await bcrypt.genSalt(10);
+  this.password = await bcrypt.hash(password, salt);
+};
+
+// Method to validate password
+UserSchema.methods.validatePassword = async function(password: string) {
+  return await bcrypt.compare(password, this.password);
+};
 
 const User: Model<IUser> = mongoose.models.User || mongoose.model<IUser>('User', UserSchema);
 
